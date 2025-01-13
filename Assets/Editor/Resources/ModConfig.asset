@@ -11,20 +11,18 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 615501dbe4f3fe94fbf4b564abb10237, type: 3}
   m_Name: ModConfig
   m_EditorClassIdentifier: 
-  id: template
-  title: Template
+  id: pinpoint
+  title: Pinpoint
   author: Blananas2
   description: 'Flavor text here
 
 
     Module by Blananas2
 
-    Other credits go here
 
+    Module ID: pinpoint
 
-    Module ID: ab
-
-    The manual can be found here: https://ktane.timwi.de/HTML/A%20B.html'
+    The manual can be found here: https://ktane.timwi.de/HTML/Pinpoint.html'
   version: 
   outputFolder: build
   previewImage: {fileID: 0}
