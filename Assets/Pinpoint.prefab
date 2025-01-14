@@ -567,7 +567,7 @@ GameObject:
   - component: {fileID: 33505523184322278}
   - component: {fileID: 23947578199206134}
   m_Layer: 0
-  m_Name: Outer Bit
+  m_Name: Rails
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -887,7 +887,7 @@ GameObject:
   - component: {fileID: 33252251597263732}
   - component: {fileID: 23118671011826054}
   m_Layer: 0
-  m_Name: Inner Bit
+  m_Name: Square
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2305,7 +2305,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!1 &1585064181124418
 GameObject:
   m_ObjectHideFlags: 1
@@ -14558,7 +14558,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: deb5dc7c9fa907743852cafbbdaadd4a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  Bomb: {fileID: 114454383462897410}
   Audio: {fileID: 114915473299363512}
   Positions:
   - {fileID: 114814689152043282}
@@ -14661,6 +14660,7 @@ MonoBehaviour:
   - {fileID: 114155651690614326}
   - {fileID: 114428666385091556}
   - {fileID: 114034393395853276}
+  Square: {fileID: 1206679816801102}
 --- !u!114 &114350071001146582
 MonoBehaviour:
   m_ObjectHideFlags: 1
