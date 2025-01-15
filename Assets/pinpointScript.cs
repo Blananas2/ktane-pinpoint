@@ -13,10 +13,14 @@ public class pinpointScript : MonoBehaviour {
 
     public KMSelectable[] Positions;
     public GameObject Square;
+    public SpriteRenderer Arm;
+    public GameObject DistanceObj;
+    public TextMesh Distance;
 
     int[] points = { -1, -1, -1, -1 }; //position in reading order; was going to use a class for this but this is what _Zero, Zero_ does
     int[] pointXs = { -1, -1, -1, -1 };
     int[] pointYs = { -1, -1, -1, -1 };
+    float scaleFactor = -1f;
     float[] dists = { -1f, -1f, -1f };
     float WAITTIME = 2f;
     float ZIPTIME = 0.5f;
@@ -38,6 +42,9 @@ public class pinpointScript : MonoBehaviour {
 
     // Use this for initialization
     void Start () {
+        scaleFactor = Rnd.Range(18, 7857) * 0.001f; //scale factors in this range ensure that 1) all the possible hypotenuses have distinct values when truncated to 3 decimals of precision and 2) the maximum a scaled hypotenuse is under 100
+        Debug.Log("Scale factor: " + scaleFactor);
+
         do {
             points[0] = Rnd.Range(0, 100);
             points[1] = Rnd.Range(0, 100);
@@ -54,10 +61,10 @@ public class pinpointScript : MonoBehaviour {
         for (int p = 0; p < 3; p++) {
             int xd = Math.Abs(pointXs[3] - pointXs[p]);
             int yd = Math.Abs(pointYs[3] - pointYs[p]);
-            dists[p] = (float)Math.Sqrt(xd*xd+yd*yd);
+            dists[p] = (float)Math.Sqrt(xd*xd+yd*yd) * scaleFactor;
         }
 
-        Debug.Log(dists.Join(" "));
+        Debug.Log("Distances: " + dists.Join(", "));
         StartCoroutine(MoveSquare());
     }
 

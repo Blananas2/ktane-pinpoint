@@ -18247,6 +18247,9 @@ MonoBehaviour:
   - {fileID: 114428666385091556}
   - {fileID: 114034393395853276}
   Square: {fileID: 1206679816801102}
+  Arm: {fileID: 212273026516394428}
+  DistanceObj: {fileID: 1838185733273444}
+  Distance: {fileID: 102803416405687780}
 --- !u!114 &114350071001146582
 MonoBehaviour:
   m_ObjectHideFlags: 1
