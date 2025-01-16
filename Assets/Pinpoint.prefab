@@ -16567,7 +16567,7 @@ TextMesh:
   m_PrefabParentObject: {fileID: 0}
   m_PrefabInternal: {fileID: 100100000}
   m_GameObject: {fileID: 1838185733273444}
-  m_Text: X
+  m_Text: 1.000
   m_OffsetZ: 0
   m_CharacterSize: 1
   m_LineSpacing: 1
@@ -18250,6 +18250,7 @@ MonoBehaviour:
   Arm: {fileID: 212273026516394428}
   DistanceObj: {fileID: 1838185733273444}
   Distance: {fileID: 102803416405687780}
+  ColorMat: {fileID: 2100000, guid: 4ebde5f14d5fc714fb30f763722f2d31, type: 2}
 --- !u!114 &114350071001146582
 MonoBehaviour:
   m_ObjectHideFlags: 1
