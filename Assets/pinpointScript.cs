@@ -13,6 +13,9 @@ public class pinpointScript : MonoBehaviour {
 
     public KMSelectable[] Positions;
     public GameObject Square;
+    public SpriteRenderer HorizScissors;
+    public SpriteRenderer VertiScissors;
+    public Sprite[] ScissorSprites;
     public SpriteRenderer Arm;
     public GameObject DistanceObj;
     public TextMesh Distance;
@@ -46,7 +49,6 @@ public class pinpointScript : MonoBehaviour {
     void Start () {
         scaleFactor = Rnd.Range(18, 7857) * 0.001f; //scale factors in this range ensure that 1) all the possible hypotenuses have distinct values when truncated to 3 decimals of precision and 2) the maximum a scaled hypotenuse is under 100
         Debug.Log("Scale factor: " + scaleFactor);
-
         do {
             points[0] = Rnd.Range(0, 100);
             points[1] = Rnd.Range(0, 100);
@@ -54,18 +56,15 @@ public class pinpointScript : MonoBehaviour {
             points[3] = Rnd.Range(0, 100);
         }
         while (points[0]==points[1] || points[0]==points[2] || points[0]==points[3] || points[1]==points[2] || points[1]==points[3] || points[2]==points[3]);
-
         for (int p = 0; p < 4; p++) {
             pointXs[p] = points[p] % 10;
             pointYs[p] = points[p] / 10;
         }
-
         for (int p = 0; p < 3; p++) {
             int xd = Math.Abs(pointXs[3] - pointXs[p]);
             int yd = Math.Abs(pointYs[3] - pointYs[p]);
             dists[p] = (float)Math.Sqrt(xd*xd+yd*yd) * scaleFactor;
         }
-
         Debug.Log("Distances: " + dists.Join(", "));
         UpdateDistanceArm();
         StartCoroutine(HueShift());
@@ -76,6 +75,8 @@ public class pinpointScript : MonoBehaviour {
         float elapsed = Rnd.Range(0f, 1f/HUESCALE);
         while (true) {
             ColorMat.color = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
+            HorizScissors.color = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
+            VertiScissors.color = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
             yield return null;
             elapsed += Time.deltaTime;
             if (elapsed * HUESCALE > 1f) { elapsed = 0f; }
@@ -105,6 +106,10 @@ public class pinpointScript : MonoBehaviour {
                 DistanceObj.SetActive(false);
                 Square.transform.localPosition = new Vector3(lerp(posLUT[pointXs[shownPoint]], posLUT[pointXs[(shownPoint+1)%3]], (elapsed - WAITTIME)*(1/ZIPTIME)), 0.02f, lerp(-posLUT[pointYs[shownPoint]], -posLUT[pointYs[(shownPoint+1)%3]], (elapsed - WAITTIME)*(1/ZIPTIME)));
             }
+            HorizScissors.transform.localPosition = new Vector3(0f, 0f, Square.transform.localPosition.z * 16.667f);
+            VertiScissors.transform.localPosition = new Vector3(Square.transform.localPosition.x * 16.667f, 0f, 0f);
+            HorizScissors.sprite = ScissorSprites[(int)Math.Round((Square.transform.localPosition.x + 0.055f)/0.00305575f, 0)];
+            VertiScissors.sprite = ScissorSprites[(int)Math.Round((-Square.transform.localPosition.z + 0.055f)/0.00305575f, 0)];
             yield return null;
             elapsed += Time.deltaTime;
             if (elapsed > (WAITTIME + ZIPTIME)) {

@@ -1,0 +1,37 @@
+0		396 × 12 [0]	: EXACT
+01a		386 × 12 [0]	: THIN, off by 120
+01b		376 × 13 [0.5]	: THICK, off by 136
+01c		366 × 13 [0.5]	: THICK, off by 6
+1		356 × 13 [0.5]	: THIN, off by 124
+12a		346 × 14 [1]	: THICK, off by 92
+12b		336 × 14 [1]	: THIN, off by 48
+12c		326 × 15 [1.5]	: THICK, off by 138
+2		316 × 15 [1.5]	: THIN, off by 12
+23a		306 × 16 [2]	: THICK, off by 144
+23b		296 × 16 [2]	: THIN, off by 16
+23c		286 × 17 [2.5]	: THICK, off by 110
+3		276 × 17 [2.5]	: THIN, off by 60
+34a		266 × 18 [3]	: THICK, off by 36
+34b		256 × 19 [3.5]	: THICK, off by 112
+34c		246 × 19 [3.5]	: THIN, off by 78
+4		236 × 20 [4]	: THIN, off by 32
+45a		226 × 21 [4.5]	: THIN, off by 6
+45b		216 × 22 [5]	: EXACT
+45c		206 × 23 [5.5]	: THIN, off by 14
+5		196 × 24 [6]	: THIN, off by 48
+56a		186 × 26 [7]	: THICK, off by 84
+56b		176 × 27 [7.5]	: EXACT
+56c		166 × 29 [8.5]	: THICK, off by 62
+6		156 × 30 [9]	: THIN, off by 72
+67a		146 × 33 [10.5]	: THICK, off by 66
+67b		136 × 35 [11.5]	: THICK, off by 8
+67c		126 × 38 [13]	: THICK, off by 36
+7		116 × 41 [14.5]	: THICK, off by 4
+78a		106 × 45 [16.5]	: THICK, off by 18
+78b		 96 × 49 [18.5]	: THIN, off by 48
+78c		 86 × 55 [21.5]	: THIN, off by 22
+8		 76 × 63 [25.5]	: THICK, off by 36
+89a		 66 × 72 [30]	: EXACT
+89b		 56 × 85 [36.5]	: THICK, off by 8
+89c		 46 × 103 [45.5]: THIN, off by 14
+9		 36 × 132 [60]	: EXACT
