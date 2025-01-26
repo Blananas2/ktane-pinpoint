@@ -32,6 +32,7 @@ public class pinpointScript : MonoBehaviour {
     float ZIPTIME = 0.5f;
     float[] posLUT = { -0.055f, -0.042777f, -0.030555f, -0.018333f, -0.006111f, 0.006111f, 0.018333f, 0.030555f, 0.042777f, 0.055f };
     bool submissionMode = false;
+    int hoverPosition = -1;
 
     //Logging
     static int moduleIdCounter = 1;
@@ -43,12 +44,12 @@ public class pinpointScript : MonoBehaviour {
         
         foreach (KMSelectable Position in Positions) {
             Position.OnInteract += delegate () { PositionPress(Position); return false; };
+            Position.OnHighlight += delegate () { if (submissionMode) { UpdateHoverPosition(Position); }  };
         }
     }
 
     void Start () {
         scaleFactor = Rnd.Range(18, 7857) * 0.001f; //scale factors in this range ensure that 1) all the possible hypotenuses have distinct values when truncated to 3 decimals of precision and 2) the maximum a scaled hypotenuse is under 100
-        Debug.Log("Scale factor: " + scaleFactor);
         do {
             points[0] = Rnd.Range(0, 100);
             points[1] = Rnd.Range(0, 100);
@@ -65,7 +66,11 @@ public class pinpointScript : MonoBehaviour {
             int yd = Math.Abs(pointYs[3] - pointYs[p]);
             dists[p] = (float)Math.Sqrt(xd*xd+yd*yd) * scaleFactor;
         }
-        Debug.Log("Distances: " + dists.Join(", "));
+        Debug.LogFormat("[Pinpoint #{0}] Given points:", moduleId);
+        Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, gridPos(points[0]), trunc(dists[0]));
+        Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, gridPos(points[1]), trunc(dists[1]));
+        Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, gridPos(points[2]), trunc(dists[2]));
+        Debug.LogFormat("[Pinpoint #{0}] With scale factor of {1}, the target point is {2}", moduleId, scaleFactor, gridPos(points[3]));
         UpdateDistanceArm();
         StartCoroutine(HueShift());
         StartCoroutine(MoveSquare());
@@ -87,14 +92,32 @@ public class pinpointScript : MonoBehaviour {
         if (moduleSolved) { return; }
         for (int Q = 0; Q < Positions.Length; Q++) {
             if (Positions[Q] == P) {
-                Debug.Log(Q);
+                if (!submissionMode) {
+                    submissionMode = true;
+                    hoverPosition = Q;
+                    Arm.gameObject.SetActive(false);
+                    DistanceObj.SetActive(false);
+                    Debug.LogFormat("[Pinpoint #{0}] Entering submission mode.", moduleId);
+                    StartCoroutine(MoveSquareButFaster());
+                    return;
+                } else {
+
+                }
+            }
+        }
+    }
+
+    void UpdateHoverPosition(KMSelectable P) {
+        for (int Q = 0; Q < Positions.Length; Q++) {
+            if (Positions[Q] == P) {
+                hoverPosition = Q;
             }
         }
     }
 
     private IEnumerator MoveSquare () {
         float elapsed = 0f;
-        while (true) {
+        while (!submissionMode) {
             if (elapsed < WAITTIME) {
                 Arm.gameObject.SetActive(true);
                 DistanceObj.SetActive(true);
@@ -106,10 +129,7 @@ public class pinpointScript : MonoBehaviour {
                 DistanceObj.SetActive(false);
                 Square.transform.localPosition = new Vector3(lerp(posLUT[pointXs[shownPoint]], posLUT[pointXs[(shownPoint+1)%3]], (elapsed - WAITTIME)*(1/ZIPTIME)), 0.02f, lerp(-posLUT[pointYs[shownPoint]], -posLUT[pointYs[(shownPoint+1)%3]], (elapsed - WAITTIME)*(1/ZIPTIME)));
             }
-            HorizScissors.transform.localPosition = new Vector3(0f, 0f, Square.transform.localPosition.z * 16.667f);
-            VertiScissors.transform.localPosition = new Vector3(Square.transform.localPosition.x * 16.667f, 0f, 0f);
-            HorizScissors.sprite = ScissorSprites[(int)Math.Round((Square.transform.localPosition.x + 0.055f)/0.00305575f, 0)];
-            VertiScissors.sprite = ScissorSprites[(int)Math.Round((-Square.transform.localPosition.z + 0.055f)/0.00305575f, 0)];
+            UpdateScissors();
             yield return null;
             elapsed += Time.deltaTime;
             if (elapsed > (WAITTIME + ZIPTIME)) {
@@ -118,6 +138,25 @@ public class pinpointScript : MonoBehaviour {
                 elapsed = 0f;
             }
         }
+    }
+
+    private IEnumerator MoveSquareButFaster() {
+        float qx = Square.transform.localPosition.x;
+        float qz = Square.transform.localPosition.z;
+        while (submissionMode) {
+            qx = (posLUT[hoverPosition%10] + qx) / 2;
+            qz = (-posLUT[hoverPosition/10] + qz) / 2;
+            Square.transform.localPosition = new Vector3(qx, 0.02f, qz);
+            UpdateScissors();
+            yield return new WaitForSeconds(0.05f);
+        }
+    }
+
+    void UpdateScissors() {
+        HorizScissors.transform.localPosition = new Vector3(0f, 0f, Square.transform.localPosition.z * 16.667f);
+        VertiScissors.transform.localPosition = new Vector3(Square.transform.localPosition.x * 16.667f, 0f, 0f);
+        HorizScissors.sprite = ScissorSprites[(int)Math.Round((Square.transform.localPosition.x + 0.055f)/0.00305575f, 0)];
+        VertiScissors.sprite = ScissorSprites[(int)Math.Round((-Square.transform.localPosition.z + 0.055f)/0.00305575f, 0)];
     }
 
     void UpdateDistanceArm() {
@@ -141,5 +180,9 @@ public class pinpointScript : MonoBehaviour {
             c[1] = c[1].PadRight(3, '0').Substring(0, 3);
             return c[0] + "." + c[1];
         }
+    }
+
+    string gridPos(int p) {
+        return "ABCDEFGHIJ"[p%10] + (p/10 + 1).ToString();
     }
 }
