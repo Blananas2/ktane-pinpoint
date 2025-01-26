@@ -9,7 +9,8 @@ using Rnd = UnityEngine.Random;
 
 public class pinpointScript : MonoBehaviour {
 
-    public KMAudio Audio;
+    public KMAudio Audio; //TODO: add sfx
+    public KMBombModule Module;
 
     public KMSelectable[] Positions;
     public GameObject Square;
@@ -64,19 +65,20 @@ public class pinpointScript : MonoBehaviour {
         for (int p = 0; p < 3; p++) {
             int xd = Math.Abs(pointXs[3] - pointXs[p]);
             int yd = Math.Abs(pointYs[3] - pointYs[p]);
-            dists[p] = (float)Math.Sqrt(xd*xd+yd*yd) * scaleFactor;
+            dists[p] = (float)Math.Sqrt(xd*xd + yd*yd) * scaleFactor;
         }
         Debug.LogFormat("[Pinpoint #{0}] Given points:", moduleId);
         Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, gridPos(points[0]), trunc(dists[0]));
         Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, gridPos(points[1]), trunc(dists[1]));
         Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, gridPos(points[2]), trunc(dists[2]));
-        Debug.LogFormat("[Pinpoint #{0}] With scale factor of {1}, the target point is {2}", moduleId, scaleFactor, gridPos(points[3]));
+        Debug.LogFormat("[Pinpoint #{0}] With scale factor of {1}, the target point is {2}", moduleId, trunc(scaleFactor), gridPos(points[3]));
+        Debug.LogFormat("<Pinpoint #{0}> Values w/ float imprecision: dists = {1}, scaleFactor = {2}", moduleId, dists.Join(" "), scaleFactor);
         UpdateDistanceArm();
         StartCoroutine(HueShift());
         StartCoroutine(MoveSquare());
     }
 
-    private IEnumerator HueShift () {
+    private IEnumerator HueShift () { //TODO: this needs to work with multiple modules (something to do with editing a copy of texture instead of the texture itself)
         float elapsed = Rnd.Range(0f, 1f/HUESCALE);
         while (true) {
             ColorMat.color = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
@@ -101,7 +103,18 @@ public class pinpointScript : MonoBehaviour {
                     StartCoroutine(MoveSquareButFaster());
                     return;
                 } else {
-
+                    submissionMode = false;
+                    if (Q == points[3]) {
+                        //TODO: add solve animation here
+                        Module.HandlePass();
+                        moduleSolved = true;
+                        Debug.LogFormat("[Pinpoint #{0}] Submitted {1}, that is correct, module solved.", moduleId, gridPos(Q));
+                    } else {
+                        Module.HandleStrike();
+                        Debug.LogFormat("[Pinpoint #{0}] Submitted {1}, that is incorrect, strike!", moduleId, gridPos(Q));
+                        //TODO: fix bug where it doesn't take into account the square's new position
+                        StartCoroutine(MoveSquare());
+                    }
                 }
             }
         }
@@ -121,13 +134,15 @@ public class pinpointScript : MonoBehaviour {
             if (elapsed < WAITTIME) {
                 Arm.gameObject.SetActive(true);
                 DistanceObj.SetActive(true);
-                Color opc = new Vector4(1f, 1f, 1f, lerp(1f, 0f, Math.Abs(elapsed - WAITTIME/2)/(WAITTIME/2)));
+                Color opc = new Vector4(1f, 1f, 1f, lerp(1f, 0f, Math.Abs(elapsed - WAITTIME/2) / (WAITTIME/2)));
                 Arm.color = opc;
                 Distance.color = opc;
             } else {
                 Arm.gameObject.SetActive(false);
                 DistanceObj.SetActive(false);
-                Square.transform.localPosition = new Vector3(lerp(posLUT[pointXs[shownPoint]], posLUT[pointXs[(shownPoint+1)%3]], (elapsed - WAITTIME)*(1/ZIPTIME)), 0.02f, lerp(-posLUT[pointYs[shownPoint]], -posLUT[pointYs[(shownPoint+1)%3]], (elapsed - WAITTIME)*(1/ZIPTIME)));
+                Square.transform.localPosition = new Vector3(lerp(posLUT[pointXs[shownPoint]], posLUT[pointXs[(shownPoint + 1) % 3]], (elapsed - WAITTIME) * (1/ZIPTIME)), 
+                                                             0.02f, 
+                                                             lerp(-posLUT[pointYs[shownPoint]], -posLUT[pointYs[(shownPoint + 1) % 3]], (elapsed - WAITTIME) * (1/ZIPTIME)));
             }
             UpdateScissors();
             yield return null;
@@ -155,8 +170,8 @@ public class pinpointScript : MonoBehaviour {
     void UpdateScissors() {
         HorizScissors.transform.localPosition = new Vector3(0f, 0f, Square.transform.localPosition.z * 16.667f);
         VertiScissors.transform.localPosition = new Vector3(Square.transform.localPosition.x * 16.667f, 0f, 0f);
-        HorizScissors.sprite = ScissorSprites[(int)Math.Round((Square.transform.localPosition.x + 0.055f)/0.00305575f, 0)];
-        VertiScissors.sprite = ScissorSprites[(int)Math.Round((-Square.transform.localPosition.z + 0.055f)/0.00305575f, 0)];
+        HorizScissors.sprite = ScissorSprites[(int)Math.Round((Square.transform.localPosition.x + 0.055f) / 0.00305575f, 0)];
+        VertiScissors.sprite = ScissorSprites[(int)Math.Round((-Square.transform.localPosition.z + 0.055f) / 0.00305575f, 0)];
     }
 
     void UpdateDistanceArm() {
