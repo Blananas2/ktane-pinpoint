@@ -14,13 +14,13 @@ public class pinpointScript : MonoBehaviour {
 
     public KMSelectable[] Positions;
     public GameObject Square;
+    public GameObject Rails;
     public SpriteRenderer HorizScissors;
     public SpriteRenderer VertiScissors;
     public Sprite[] ScissorSprites;
     public SpriteRenderer Arm;
     public GameObject DistanceObj;
     public TextMesh Distance;
-    public Material ColorMat;
 
     int[] points = { -1, -1, -1, -1 }; //position in reading order; was going to use a class for this but this is what _Zero, Zero_ does
     int[] pointXs = { -1, -1, -1, -1 };
@@ -34,6 +34,9 @@ public class pinpointScript : MonoBehaviour {
     float[] posLUT = { -0.055f, -0.042777f, -0.030555f, -0.018333f, -0.006111f, 0.006111f, 0.018333f, 0.030555f, 0.042777f, 0.055f };
     bool submissionMode = false;
     int hoverPosition = -1;
+
+    Coroutine moveSquareCoroutine;
+    Coroutine cycleAnimationCoroutine;
 
     //Logging
     static int moduleIdCounter = 1;
@@ -75,18 +78,23 @@ public class pinpointScript : MonoBehaviour {
         Debug.LogFormat("<Pinpoint #{0}> Values w/ float imprecision: dists = {1}, scaleFactor = {2}", moduleId, dists.Join(" "), scaleFactor);
         UpdateDistanceArm();
         StartCoroutine(HueShift());
-        StartCoroutine(MoveSquare());
+        if (cycleAnimationCoroutine != null)
+            StopCoroutine(cycleAnimationCoroutine);
+        cycleAnimationCoroutine = StartCoroutine(CycleAnimation());
     }
 
-    private IEnumerator HueShift () { //TODO: this needs to work with multiple modules (something to do with editing a copy of texture instead of the texture itself)
+    private IEnumerator HueShift () {
         float elapsed = Rnd.Range(0f, 1f/HUESCALE);
         while (true) {
-            ColorMat.color = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
-            HorizScissors.color = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
-            VertiScissors.color = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
+            var c = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
+            Square.GetComponent<MeshRenderer>().material.color = c;
+            Rails.GetComponent<MeshRenderer>().material.color = c;
+            HorizScissors.color = c;
+            VertiScissors.color = c;
             yield return null;
             elapsed += Time.deltaTime;
-            if (elapsed * HUESCALE > 1f) { elapsed = 0f; }
+            if (elapsed * HUESCALE > 1f)
+                elapsed = 0f;
         }
     }
 
@@ -95,12 +103,24 @@ public class pinpointScript : MonoBehaviour {
         for (int Q = 0; Q < Positions.Length; Q++) {
             if (Positions[Q] == P) {
                 if (!submissionMode) {
+                    if (cycleAnimationCoroutine != null)
+                        StopCoroutine (cycleAnimationCoroutine);
+                    if (moveSquareCoroutine != null)
+                        StopCoroutine (moveSquareCoroutine);
                     submissionMode = true;
                     hoverPosition = Q;
+
+                    if (moveSquareCoroutine != null)
+                        StopCoroutine(moveSquareCoroutine);
+                    var startPos = Square.transform.localPosition;
+                    float qx = posLUT[Q % 10];
+                    float qz = -posLUT[Q / 10];
+                    var goalPos = new Vector3(qx, 0.02f, qz);
+                    moveSquareCoroutine = StartCoroutine(MoveSquare(startPos, goalPos, 0.1f));
+
                     Arm.gameObject.SetActive(false);
                     DistanceObj.SetActive(false);
                     Debug.LogFormat("[Pinpoint #{0}] Entering submission mode.", moduleId);
-                    StartCoroutine(MoveSquareButFaster());
                     return;
                 } else {
                     submissionMode = false;
@@ -112,8 +132,9 @@ public class pinpointScript : MonoBehaviour {
                     } else {
                         Module.HandleStrike();
                         Debug.LogFormat("[Pinpoint #{0}] Submitted {1}, that is incorrect, strike!", moduleId, gridPos(Q));
-                        //TODO: fix bug where it doesn't take into account the square's new position
-                        StartCoroutine(MoveSquare());
+                        if (cycleAnimationCoroutine != null)
+                            StopCoroutine(cycleAnimationCoroutine);
+                        cycleAnimationCoroutine = StartCoroutine(CycleAnimation());
                     }
                 }
             }
@@ -124,47 +145,63 @@ public class pinpointScript : MonoBehaviour {
         for (int Q = 0; Q < Positions.Length; Q++) {
             if (Positions[Q] == P) {
                 hoverPosition = Q;
+
+                if (moveSquareCoroutine != null)
+                    StopCoroutine(moveSquareCoroutine);
+                float qx = posLUT[Q % 10];
+                float qz = -posLUT[Q / 10];
+                var goalPos = new Vector3(qx, 0.02f, qz);
+                moveSquareCoroutine = StartCoroutine(MoveSquare(Square.transform.localPosition, goalPos, 0.1f));
             }
         }
     }
 
-    private IEnumerator MoveSquare () {
-        float elapsed = 0f;
-        while (!submissionMode) {
-            if (elapsed < WAITTIME) {
-                Arm.gameObject.SetActive(true);
-                DistanceObj.SetActive(true);
-                Color opc = new Vector4(1f, 1f, 1f, lerp(1f, 0f, Math.Abs(elapsed - WAITTIME/2) / (WAITTIME/2)));
+    private IEnumerator CycleAnimation()
+    {
+        Color opc = new Color(1f, 1f, 1f, 0f);
+        Arm.color = opc;
+        Distance.color = opc;
+        while (!submissionMode)
+        {
+            if (moveSquareCoroutine != null)
+                StopCoroutine(moveSquareCoroutine);
+            var startPos = Square.transform.localPosition;
+            var goalPos = new Vector3(posLUT[pointXs[(shownPoint + 1) % 3]], 0.02f, -posLUT[pointYs[(shownPoint + 1) % 3]]);
+            moveSquareCoroutine = StartCoroutine(MoveSquare(startPos, goalPos, ZIPTIME));
+            yield return new WaitForSeconds(ZIPTIME);
+            UpdateScissors();
+            shownPoint = (shownPoint + 1) % 3;
+            UpdateDistanceArm();
+            var elapsed = 0f;
+            Arm.gameObject.SetActive(true);
+            DistanceObj.SetActive(true);
+            while (elapsed < WAITTIME)
+            {
+                opc = new Color(1f, 1f, 1f, lerp(1f, 0f, Math.Abs(elapsed - WAITTIME / 2) / (WAITTIME / 2)));
                 Arm.color = opc;
                 Distance.color = opc;
-            } else {
-                Arm.gameObject.SetActive(false);
-                DistanceObj.SetActive(false);
-                Square.transform.localPosition = new Vector3(lerp(posLUT[pointXs[shownPoint]], posLUT[pointXs[(shownPoint + 1) % 3]], (elapsed - WAITTIME) * (1/ZIPTIME)), 
-                                                             0.02f, 
-                                                             lerp(-posLUT[pointYs[shownPoint]], -posLUT[pointYs[(shownPoint + 1) % 3]], (elapsed - WAITTIME) * (1/ZIPTIME)));
-            }
-            UpdateScissors();
-            yield return null;
-            elapsed += Time.deltaTime;
-            if (elapsed > (WAITTIME + ZIPTIME)) {
-                shownPoint = (shownPoint + 1) % 3;
-                UpdateDistanceArm();
-                elapsed = 0f;
+                yield return null;
+                elapsed += Time.deltaTime;
             }
         }
     }
 
-    private IEnumerator MoveSquareButFaster() {
-        float qx = Square.transform.localPosition.x;
-        float qz = Square.transform.localPosition.z;
-        while (submissionMode) {
-            qx = (posLUT[hoverPosition%10] + qx) / 2;
-            qz = (-posLUT[hoverPosition/10] + qz) / 2;
-            Square.transform.localPosition = new Vector3(qx, 0.02f, qz);
-            UpdateScissors();
-            yield return new WaitForSeconds(0.05f);
+    private IEnumerator MoveSquare (Vector3 start, Vector3 goal, float time)
+    {
+        var elapsed = 0f;
+        while (elapsed < time)
+        {
+            Square.transform.localPosition = new Vector3(Mathf.Lerp(start.x, goal.x, elapsed / time), 0.02f, Mathf.Lerp(start.z, goal.z, elapsed / time));
+            yield return null;
+            elapsed += Time.deltaTime;
         }
+        Square.transform.localPosition = new Vector3(goal.x, 0.02f, goal.z);
+    }
+
+
+    void Update()
+    {
+        UpdateScissors();
     }
 
     void UpdateScissors() {
@@ -175,7 +212,6 @@ public class pinpointScript : MonoBehaviour {
     }
 
     void UpdateDistanceArm() {
-        Square.transform.localPosition = new Vector3(posLUT[pointXs[shownPoint]], 0.02f, -posLUT[pointYs[shownPoint]]);
         Arm.flipX = Square.transform.localPosition.x > 0f;
         Arm.flipY = Square.transform.localPosition.z < 0f;
         DistanceObj.transform.localPosition = new Vector3(Square.transform.localPosition.x > 0f ? -0.386f : 0.386f, 0.15f, Square.transform.localPosition.z < 0f ? 0.85f : -0.725f);
@@ -199,5 +235,48 @@ public class pinpointScript : MonoBehaviour {
 
     string gridPos(int p) {
         return "ABCDEFGHIJ"[p%10] + (p/10 + 1).ToString();
+    }
+
+#pragma warning disable 0414
+    private readonly string TwitchHelpMessage = "!{0} press A1 [Press the cell at position A1.] | Columns are labeled A-J from left to right. | Rows are labeled 1-10 from top to bottom.";
+#pragma warning restore 0414
+
+    private IEnumerator ProcessTwitchCommand(string command)
+    {
+        command = command.ToUpperInvariant();
+        Match m = Regex.Match(command, @"^\s*(press|submit|click)\s+(?<col>[A-J])\s*(?<row>\d+)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        if (!m.Success)
+            yield break;
+        var cg = m.Groups["col"].Value;
+        var rg = m.Groups["row"].Value;
+        int col = cg[0] - 'A';
+        int row;
+        if (!int.TryParse(rg, out row) || row < 1 || row > 10)
+            yield break;
+        var pos = (row - 1) * 10 + col;
+        yield return null;
+        if (!submissionMode)
+        {
+            Positions[pos].OnInteract();
+            yield return new WaitForSeconds(0.5f);
+        }
+        Positions[pos].OnHighlight();
+        yield return new WaitForSeconds(0.75f);
+        Positions[pos].OnInteract();
+        yield break;
+    }
+
+    private IEnumerator TwitchHandleForcedSolve()
+    {
+        var pos = points[3];
+        if (!submissionMode)
+        {
+            Positions[pos].OnInteract();
+            yield return new WaitForSeconds(0.5f);
+        }
+        Positions[pos].OnHighlight();
+        yield return new WaitForSeconds(0.75f);
+        Positions[pos].OnInteract();
+        yield break;
     }
 }

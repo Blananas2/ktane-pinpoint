@@ -17561,7 +17561,7 @@ MonoBehaviour:
   - {fileID: 114428666385091556}
   - {fileID: 114034393395853276}
   IsPassThrough: 0
-  ChildRowLength: 0
+  ChildRowLength: 10
   Highlight: {fileID: 114570430299588062}
   SelectableColliders: []
   DefaultSelectableIndex: 0
@@ -18308,6 +18308,7 @@ MonoBehaviour:
   - {fileID: 114428666385091556}
   - {fileID: 114034393395853276}
   Square: {fileID: 1206679816801102}
+  Rails: {fileID: 1116146779837584}
   HorizScissors: {fileID: 212674660488557562}
   VertiScissors: {fileID: 212172376979253786}
   ScissorSprites:
