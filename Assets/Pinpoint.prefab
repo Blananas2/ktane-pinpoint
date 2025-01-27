@@ -18352,7 +18352,6 @@ MonoBehaviour:
   Arm: {fileID: 212273026516394428}
   DistanceObj: {fileID: 1838185733273444}
   Distance: {fileID: 102803416405687780}
-  ColorMat: {fileID: 2100000, guid: 4ebde5f14d5fc714fb30f763722f2d31, type: 2}
 --- !u!114 &114350071001146582
 MonoBehaviour:
   m_ObjectHideFlags: 1

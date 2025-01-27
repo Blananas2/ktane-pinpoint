@@ -86,7 +86,7 @@ public class pinpointScript : MonoBehaviour {
     private IEnumerator HueShift () {
         float elapsed = Rnd.Range(0f, 1f/HUESCALE);
         while (true) {
-            var c = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
+            Color c = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
             Square.GetComponent<MeshRenderer>().material.color = c;
             Rails.GetComponent<MeshRenderer>().material.color = c;
             HorizScissors.color = c;
@@ -112,11 +112,11 @@ public class pinpointScript : MonoBehaviour {
 
                     if (moveSquareCoroutine != null)
                         StopCoroutine(moveSquareCoroutine);
-                    var startPos = Square.transform.localPosition;
+                    Vector3 startPos = Square.transform.localPosition;
                     float qx = posLUT[Q % 10];
                     float qz = -posLUT[Q / 10];
-                    var goalPos = new Vector3(qx, 0.02f, qz);
-                    moveSquareCoroutine = StartCoroutine(MoveSquare(startPos, goalPos, 0.1f));
+                    Vector3 goalPos = new Vector3(qx, 0.02f, qz);
+                    moveSquareCoroutine = StartCoroutine(MoveSquare(startPos, goalPos, 0.15f));
 
                     Arm.gameObject.SetActive(false);
                     DistanceObj.SetActive(false);
@@ -150,8 +150,8 @@ public class pinpointScript : MonoBehaviour {
                     StopCoroutine(moveSquareCoroutine);
                 float qx = posLUT[Q % 10];
                 float qz = -posLUT[Q / 10];
-                var goalPos = new Vector3(qx, 0.02f, qz);
-                moveSquareCoroutine = StartCoroutine(MoveSquare(Square.transform.localPosition, goalPos, 0.1f));
+                Vector3 goalPos = new Vector3(qx, 0.02f, qz);
+                moveSquareCoroutine = StartCoroutine(MoveSquare(Square.transform.localPosition, goalPos, 0.15f));
             }
         }
     }
@@ -165,14 +165,14 @@ public class pinpointScript : MonoBehaviour {
         {
             if (moveSquareCoroutine != null)
                 StopCoroutine(moveSquareCoroutine);
-            var startPos = Square.transform.localPosition;
-            var goalPos = new Vector3(posLUT[pointXs[(shownPoint + 1) % 3]], 0.02f, -posLUT[pointYs[(shownPoint + 1) % 3]]);
+            Vector3 startPos = Square.transform.localPosition;
+            Vector3 goalPos = new Vector3(posLUT[pointXs[(shownPoint + 1) % 3]], 0.02f, -posLUT[pointYs[(shownPoint + 1) % 3]]);
             moveSquareCoroutine = StartCoroutine(MoveSquare(startPos, goalPos, ZIPTIME));
             yield return new WaitForSeconds(ZIPTIME);
             UpdateScissors();
             shownPoint = (shownPoint + 1) % 3;
             UpdateDistanceArm();
-            var elapsed = 0f;
+            float elapsed = 0f;
             Arm.gameObject.SetActive(true);
             DistanceObj.SetActive(true);
             while (elapsed < WAITTIME)
@@ -188,7 +188,7 @@ public class pinpointScript : MonoBehaviour {
 
     private IEnumerator MoveSquare (Vector3 start, Vector3 goal, float time)
     {
-        var elapsed = 0f;
+        float elapsed = 0f;
         while (elapsed < time)
         {
             Square.transform.localPosition = new Vector3(Mathf.Lerp(start.x, goal.x, elapsed / time), 0.02f, Mathf.Lerp(start.z, goal.z, elapsed / time));
@@ -247,13 +247,13 @@ public class pinpointScript : MonoBehaviour {
         Match m = Regex.Match(command, @"^\s*(press|submit|click)\s+(?<col>[A-J])\s*(?<row>\d+)\s*$", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
         if (!m.Success)
             yield break;
-        var cg = m.Groups["col"].Value;
-        var rg = m.Groups["row"].Value;
+        string cg = m.Groups["col"].Value;
+        string rg = m.Groups["row"].Value;
         int col = cg[0] - 'A';
         int row;
         if (!int.TryParse(rg, out row) || row < 1 || row > 10)
             yield break;
-        var pos = (row - 1) * 10 + col;
+        int pos = (row - 1) * 10 + col;
         yield return null;
         if (!submissionMode)
         {
@@ -268,7 +268,7 @@ public class pinpointScript : MonoBehaviour {
 
     private IEnumerator TwitchHandleForcedSolve()
     {
-        var pos = points[3];
+        int pos = points[3];
         if (!submissionMode)
         {
             Positions[pos].OnInteract();
