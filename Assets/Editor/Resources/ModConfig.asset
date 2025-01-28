@@ -14,10 +14,16 @@ MonoBehaviour:
   id: pinpoint
   title: Pinpoint
   author: Blananas2
-  description: 'Flavor text here
+  description: 'The less you think about the technology which allows for status lights
+    to be invisible when they''re not lit up, the better. To be fair though, modules
+    that stopped being possible to recreate physically have existed since 2017, even
+    worse if you only count modules that are reasonable to build, in which case bad
+    offenders have existed since Wire Sequence.
 
 
     Module by Blananas2
+
+    Additional help by Quinn Wuest
 
 
     Module ID: pinpoint
@@ -25,4 +31,4 @@ MonoBehaviour:
     The manual can be found here: https://ktane.timwi.de/HTML/Pinpoint.html'
   version: 
   outputFolder: build
-  previewImage: {fileID: 0}
+  previewImage: {fileID: 2800000, guid: 9ca0b78de90344a49a85a326b23762b4, type: 3}
