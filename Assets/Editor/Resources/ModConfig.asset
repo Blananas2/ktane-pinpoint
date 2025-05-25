@@ -14,11 +14,7 @@ MonoBehaviour:
   id: pinpoint
   title: Pinpoint
   author: Blananas2
-  description: 'The less you think about the technology which allows for status lights
-    to be invisible when they''re not lit up, the better. To be fair though, modules
-    that stopped being possible to recreate physically have existed since 2017, even
-    worse if you only count modules that are reasonable to build, in which case bad
-    offenders have existed since Wire Sequence.
+  description: 'Hey, at least you have some information on where the needle lives.
 
 
     Module by Blananas2
