@@ -60,17 +60,15 @@ public class pinpointScript : MonoBehaviour {
     void Start () {
         StatusLight.SetActive(false);
         scaleFactor = Rnd.Range(18, 7857) * 0.001f; //scale factors in this range ensure that 1) all the possible hypotenuses have distinct values when truncated to 3 decimals of precision and 2) the maximum a scaled hypotenuse is under 100
-        do {
-            points[0] = Rnd.Range(0, 100);
-            points[1] = Rnd.Range(0, 100);
-            points[2] = Rnd.Range(0, 100);
-            points[3] = Rnd.Range(0, 100);
+        do
+        {
+            for (int p = 0; p < 4; p++) {
+                points[p] = Rnd.Range(0, 100);
+                pointXs[p] = points[p] % 10;
+                pointYs[p] = points[p] / 10;
+            }
         }
-        while (points[0]==points[1] || points[0]==points[2] || points[0]==points[3] || points[1]==points[2] || points[1]==points[3] || points[2]==points[3]);
-        for (int p = 0; p < 4; p++) {
-            pointXs[p] = points[p] % 10;
-            pointYs[p] = points[p] / 10;
-        }
+        while (PointsMatch() || PointsColinear()); //fortunately, even though points matching would break PointsColinear() via a division by 0, if PointsMatch() is true, C# will not evaulate PointsColinear()!
         for (int p = 0; p < 3; p++) {
             int xd = Math.Abs(pointXs[3] - pointXs[p]);
             int yd = Math.Abs(pointYs[3] - pointYs[p]);
@@ -89,9 +87,44 @@ public class pinpointScript : MonoBehaviour {
         cycleAnimationCoroutine = StartCoroutine(CycleAnimation());
     }
 
-    private IEnumerator HueShift () {
-        float elapsed = Rnd.Range(0f, 1f/HUESCALE);
-        while (!moduleSolved) {
+    bool PointsMatch() { return points[0] == points[1] || points[0] == points[2] || points[0] == points[3] || points[1] == points[2] || points[1] == points[3] || points[2] == points[3]; }
+
+    bool PointsColinear()
+    {
+        //check which of the three points has to be in the middle; reading order will work fine here, swap to make the middle one points[1] if necessary
+        if ((points[0] < points[1] && points[0] > points[2]) || (points[0] > points[1] && points[0] < points[2]))
+        {
+            swapTrick(points[0], points[1]);
+            swapTrick(pointXs[0], pointXs[1]);
+            swapTrick(pointYs[0], pointYs[1]);
+        }
+        else if ((points[2] < points[0] && points[2] > points[1]) || (points[2] > points[0] && points[2] < points[1]))
+        {
+            swapTrick(points[1], points[2]);
+            swapTrick(pointXs[1], pointXs[2]);
+            swapTrick(pointYs[1], pointYs[2]);
+        }
+
+        //if the slopes ab and bc between points a, b, c - where b is the one in the middle - match, then the points are colinear
+        float abSlope = (pointXs[0] - pointXs[1]) / (pointYs[0] - pointYs[1]);
+        float bcSlope = (pointXs[1] - pointXs[2]) / (pointYs[1] - pointYs[2]);
+        if (abSlope != bcSlope)
+            return false;
+
+        //if it does turn out that the points are colinear, we may still be in the clear if the other possible point is outside of the 10x10 area
+        int oppX = pointXs[1] + (pointXs[1] - pointXs[3]);
+        int oppY = pointYs[1] + (pointYs[1] - pointYs[3]);
+        if (oppX < 0 || oppX > 9 || oppY < 0 || oppY > 9)
+            return false;
+
+        return true;
+    }
+
+    private IEnumerator HueShift()
+    {
+        float elapsed = Rnd.Range(0f, 1f / HUESCALE);
+        while (!moduleSolved)
+        {
             Color c = Color.HSVToRGB(elapsed * HUESCALE, 0.5f, 1f);
             Square.GetComponent<MeshRenderer>().material.color = c;
             Rails.GetComponent<MeshRenderer>().material.color = c;
@@ -135,7 +168,6 @@ public class pinpointScript : MonoBehaviour {
                     StatusLight.transform.localPosition = new Vector3(posLUT[Q % 10], 0.018f, -posLUT[Q / 10]);
                     submissionMode = false;
                     if (Q == points[3]) {
-                        //TODO: add solve animation here
                         StartCoroutine(ExpandSymbol(true));
                         Module.HandlePass();
                         moduleSolved = true;
@@ -259,6 +291,13 @@ public class pinpointScript : MonoBehaviour {
         Arm.flipY = Square.transform.localPosition.z < 0f;
         DistanceObj.transform.localPosition = new Vector3(Square.transform.localPosition.x > 0f ? -0.386f : 0.386f, 0.15f, Square.transform.localPosition.z < 0f ? 0.85f : -0.725f);
         Distance.text = trunc(dists[shownPoint]);
+    }
+
+    void swapTrick(int a, int b) //this trick is so sick i love it
+    {
+        a = a ^ b;
+        b = a ^ b;
+        a = a ^ b;
     }
 
     float lerp(float a, float b, float t) { //this assumes t is in the range 0-1
