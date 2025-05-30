@@ -7,9 +7,9 @@ using UnityEngine;
 using KModkit;
 using Rnd = UnityEngine.Random;
 
-public class pinpointScript : MonoBehaviour {
-
-    public KMAudio Audio; //TODO: add sfx
+public class pinpointScript : MonoBehaviour
+{
+    public KMAudio Audio;
     public KMBombModule Module;
 
     public KMSelectable[] Positions;
@@ -25,16 +25,16 @@ public class pinpointScript : MonoBehaviour {
     public SpriteRenderer[] SymbolSlots;
     public Sprite[] SymbolSprites;
 
-    int[] points = { -1, -1, -1, -1 }; //position in reading order; was going to use a class for this but this is what _Zero, Zero_ does
-    int[] pointXs = { -1, -1, -1, -1 };
-    int[] pointYs = { -1, -1, -1, -1 };
+    readonly int[] points = { -1, -1, -1, -1 }; //position in reading order; was going to use a class for this but this is what _Zero, Zero_ does
+    readonly int[] pointXs = { -1, -1, -1, -1 };
+    readonly int[] pointYs = { -1, -1, -1, -1 };
     float scaleFactor = -1f;
-    float[] dists = { -1f, -1f, -1f };
+    readonly float[] dists = { -1f, -1f, -1f };
     int shownPoint = 0;
-    float HUESCALE = 0.0005f;
-    float WAITTIME = 4f;
-    float ZIPTIME = 0.5f;
-    float SCRUBTIME = 0.15f;
+    const float HUESCALE = 0.0005f;
+    const float WAITTIME = 4f;
+    const float ZIPTIME = 0.5f;
+    const float SCRUBTIME = 0.15f;
     Vector3 SLDEFAULT = new Vector3(0.075167f, 0.018f, 0.076057f); //need to put it back here for TP
     float[] posLUT = { -0.055f, -0.042777f, -0.030555f, -0.018333f, -0.006111f, 0.006111f, 0.018333f, 0.030555f, 0.042777f, 0.055f };
     bool submissionMode = false;
@@ -48,18 +48,21 @@ public class pinpointScript : MonoBehaviour {
     int moduleId;
     private bool moduleSolved;
 
-    void Awake () {
+    void Awake()
+    {
         moduleId = moduleIdCounter++;
-        
-        foreach (KMSelectable Position in Positions) {
+
+        foreach (KMSelectable Position in Positions)
+        {
             Position.OnInteract += delegate () { PositionPress(Position); return false; };
-            Position.OnHighlight += delegate () { if (submissionMode) { UpdateHoverPosition(Position); }  };
+            Position.OnHighlight += delegate () { if (submissionMode) { UpdateHoverPosition(Position); } };
         }
     }
 
-    void Start () {
+    void Start()
+    {
         StatusLight.SetActive(false);
-        scaleFactor = Rnd.Range(18, 7857) * 0.001f; //scale factors in this range ensure that 1) all the possible hypotenuses have distinct values when truncated to 3 decimals of precision and 2) the maximum a scaled hypotenuse is under 100
+        scaleFactor = Rnd.Range(18, 7857) * 0.001f; //scale factors in this range ensure that 1) all the possible hypotenuses have distinct values when truncated to 3 decimals of precision and 2) the maximum scaled hypotenuse is under 100
         do
         {
             for (int p = 0; p < 4; p++)
@@ -68,19 +71,19 @@ public class pinpointScript : MonoBehaviour {
                 pointXs[p] = points[p] % 10;
                 pointYs[p] = points[p] / 10;
             }
-            if (!PointsMatch() && PointsColinear() ) { Debug.Log("COLINEAR: " + points[0] + ", " + points[1] + ", " + points[2]); }
         }
-        while (PointsMatch() || PointsColinear()); //fortunately, even though points matching would break PointsColinear() via a division by 0, if PointsMatch() is true, C# will not evaulate PointsColinear()!
-        for (int p = 0; p < 3; p++) {
+        while (PointsMatch() || PointsCollinear()); //fortunately, even though points matching would break PointsCollinear() via a division by 0, if PointsMatch() is true, C# will not evaulate PointsCollinear()!
+        for (int p = 0; p < 3; p++)
+        {
             int xd = Math.Abs(pointXs[3] - pointXs[p]);
             int yd = Math.Abs(pointYs[3] - pointYs[p]);
-            dists[p] = (float)Math.Sqrt(xd*xd + yd*yd) * scaleFactor;
+            dists[p] = (float) Math.Sqrt(xd * xd + yd * yd) * scaleFactor;
         }
         Debug.LogFormat("[Pinpoint #{0}] Given points:", moduleId);
-        Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, gridPos(points[0]), trunc(dists[0]));
-        Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, gridPos(points[1]), trunc(dists[1]));
-        Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, gridPos(points[2]), trunc(dists[2]));
-        Debug.LogFormat("[Pinpoint #{0}] With scale factor of {1}, the target point is {2}", moduleId, trunc(scaleFactor), gridPos(points[3]));
+        Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, GridPos(points[0]), Trunc(dists[0]));
+        Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, GridPos(points[1]), Trunc(dists[1]));
+        Debug.LogFormat("[Pinpoint #{0}] {1}, distance of {2}", moduleId, GridPos(points[2]), Trunc(dists[2]));
+        Debug.LogFormat("[Pinpoint #{0}] With scale factor of {1}, the target point is {2}", moduleId, Trunc(scaleFactor), GridPos(points[3]));
         Debug.LogFormat("<Pinpoint #{0}> Raw float values: dists = {1}, scaleFactor = {2}", moduleId, dists.Join(" "), scaleFactor);
         UpdateDistanceArm();
         StartCoroutine(HueShift());
@@ -91,42 +94,9 @@ public class pinpointScript : MonoBehaviour {
 
     bool PointsMatch() { return points[0] == points[1] || points[0] == points[2] || points[0] == points[3] || points[1] == points[2] || points[1] == points[3] || points[2] == points[3]; }
 
-    bool PointsColinear()
+    bool PointsCollinear()
     {
-        //check which of the three points has to be in the middle; reading order will work fine here, swap to make the middle one points[1] if necessary
-        if ((points[0] < points[1] && points[0] > points[2]) || (points[0] > points[1] && points[0] < points[2]))
-        {
-            swapTrick(points, 0, 1);
-            swapTrick(pointXs, 0, 1);
-            swapTrick(pointYs, 0, 1);
-        }
-        else if ((points[2] < points[0] && points[2] > points[1]) || (points[2] > points[0] && points[2] < points[1]))
-        {
-            swapTrick(points, 1, 2);
-            swapTrick(pointXs, 1, 2);
-            swapTrick(pointYs, 1, 2);
-        }
-
-        //if the slopes ab and bc between points a, b, c - where b is the one in the middle - match, then the points are colinear, see OrthogonalCheck() as well
-        float abSlope = AlignmentCheck(0, 1) ?? (pointXs[0] - pointXs[1]) / (pointYs[0] - pointYs[1]);
-        float bcSlope = AlignmentCheck(1, 2) ?? (pointXs[1] - pointXs[2]) / (pointYs[1] - pointYs[2]);
-        if (abSlope != bcSlope)
-            return false;
-
-        //if it does turn out that the points are colinear, we may still be in the clear if the other possible point is outside of the 10x10 area
-        int oppX = pointXs[1] + (pointXs[1] - pointXs[3]);
-        int oppY = pointYs[1] + (pointYs[1] - pointYs[3]);
-        if (oppX < 0 || oppX > 9 || oppY < 0 || oppY > 9)
-            return false;
-
-        return true;
-    }
-
-    float? AlignmentCheck(int a, int b)
-    {
-        if (pointXs[a] == pointXs[b]) { return 0f; } //on the same x, the formula would be 0/n which is always 0 for non-zero n
-        if (pointYs[a] == pointYs[b]) { return Single.MaxValue; } // on the same y, the formula would be n/0 where i'll substitute for 'infinity'
-        return null;
+        return (pointYs[1] - pointYs[0]) * (pointXs[2] - pointXs[0]) == (pointYs[2] - pointYs[0]) * (pointXs[1] - pointXs[0]);
     }
 
     private IEnumerator HueShift()
@@ -150,15 +120,19 @@ public class pinpointScript : MonoBehaviour {
         VertiScissors.color = Color.white;
     }
 
-    void PositionPress (KMSelectable P) {
+    void PositionPress(KMSelectable P)
+    {
         if (moduleSolved) { return; }
-        for (int Q = 0; Q < Positions.Length; Q++) {
-            if (Positions[Q] == P) {
-                if (!submissionMode) {
+        for (int Q = 0; Q < Positions.Length; Q++)
+        {
+            if (Positions[Q] == P)
+            {
+                if (!submissionMode)
+                {
                     if (cycleAnimationCoroutine != null)
-                        StopCoroutine (cycleAnimationCoroutine);
+                        StopCoroutine(cycleAnimationCoroutine);
                     if (moveSquareCoroutine != null)
-                        StopCoroutine (moveSquareCoroutine);
+                        StopCoroutine(moveSquareCoroutine);
                     submissionMode = true;
                     hoverPosition = Q;
                     if (moveSquareCoroutine != null)
@@ -172,20 +146,25 @@ public class pinpointScript : MonoBehaviour {
                     DistanceObj.SetActive(false);
                     Audio.PlaySoundAtTransform("smallgong", transform);
                     return;
-                } else {
+                }
+                else
+                {
                     StatusLight.SetActive(true);
                     StatusLight.transform.localPosition = new Vector3(posLUT[Q % 10], 0.018f, -posLUT[Q / 10]);
                     submissionMode = false;
-                    if (Q == points[3]) {
+                    if (Q == points[3])
+                    {
                         StartCoroutine(ExpandSymbol(true));
                         Module.HandlePass();
                         moduleSolved = true;
                         Audio.PlaySoundAtTransform("biggong", transform);
-                        Debug.LogFormat("[Pinpoint #{0}] Submitted {1}, that is correct, module solved.", moduleId, gridPos(Q));
-                    } else {
+                        Debug.LogFormat("[Pinpoint #{0}] Submitted {1}, that is correct, module solved.", moduleId, GridPos(Q));
+                    }
+                    else
+                    {
                         StartCoroutine(ExpandSymbol(false));
                         Module.HandleStrike();
-                        Debug.LogFormat("[Pinpoint #{0}] Submitted {1}, that is incorrect, strike!", moduleId, gridPos(Q));
+                        Debug.LogFormat("[Pinpoint #{0}] Submitted {1}, that is incorrect, strike!", moduleId, GridPos(Q));
                         StartCoroutine(WaitASecThenContinue());
                     }
                 }
@@ -193,9 +172,12 @@ public class pinpointScript : MonoBehaviour {
         }
     }
 
-    void UpdateHoverPosition(KMSelectable P) {
-        for (int Q = 0; Q < Positions.Length; Q++) {
-            if (Positions[Q] == P) {
+    void UpdateHoverPosition(KMSelectable P)
+    {
+        for (int Q = 0; Q < Positions.Length; Q++)
+        {
+            if (Positions[Q] == P)
+            {
                 hoverPosition = Q;
                 if (moveSquareCoroutine != null)
                     StopCoroutine(moveSquareCoroutine);
@@ -227,7 +209,7 @@ public class pinpointScript : MonoBehaviour {
             DistanceObj.SetActive(true);
             while (elapsed < WAITTIME)
             {
-                opc = new Color(1f, 1f, 1f, lerp(1f, 0f, Math.Abs(elapsed - WAITTIME / 2) / (WAITTIME / 2)));
+                opc = new Color(1f, 1f, 1f, Lerp(1f, 0f, Math.Abs(elapsed - WAITTIME / 2) / (WAITTIME / 2)));
                 Arm.color = opc;
                 Distance.color = opc;
                 yield return null;
@@ -236,37 +218,46 @@ public class pinpointScript : MonoBehaviour {
         }
     }
 
-    private IEnumerator ExpandSymbol(bool g) {
-        for (int s = 0; s < 3; s++) {
+    private IEnumerator ExpandSymbol(bool g)
+    {
+        for (int s = 0; s < 3; s++)
+        {
             SymbolSlots[s].sprite = SymbolSprites[g ? 1 : 0];
         }
         float elapsed = 0f;
         float duration = 1f;
         float threshold = 0.8f;
         float[] sizes = { 0.000625f, 0.000625f, 0.000625f };
-        while (elapsed < duration) {
+        while (elapsed < duration)
+        {
             sizes[0] *= 1.06f;
             sizes[1] *= 1.08f;
             sizes[2] *= 1.1f;
-            for (int s = 0; s < 3; s++) {
+            for (int s = 0; s < 3; s++)
+            {
                 SymbolSlots[s].transform.localScale = new Vector3(sizes[s], sizes[s], 1f);
-                if (elapsed > threshold) {
-                    SymbolSlots[s].color = new Color(1f, 1f, 1f, lerp(0.5f, 0f, (elapsed - threshold) / (duration - threshold)));
+                if (elapsed > threshold)
+                {
+                    SymbolSlots[s].color = new Color(1f, 1f, 1f, Lerp(0.5f, 0f, (elapsed - threshold) / (duration - threshold)));
                 }
             }
             yield return null;
             elapsed += Time.deltaTime;
         }
-        for (int s = 0; s < 3; s++) {
-            if (g) {
+        for (int s = 0; s < 3; s++)
+        {
+            if (g)
+            {
                 SymbolSlots[s].gameObject.SetActive(false);
-            } else {
+            }
+            else
+            {
                 SymbolSlots[s].color = new Color(1f, 1f, 1f, 0.5f);
             }
         }
     }
 
-    private IEnumerator MoveSquare (Vector3 start, Vector3 goal, float duration)
+    private IEnumerator MoveSquare(Vector3 start, Vector3 goal, float duration)
     {
         float elapsed = 0f;
         while (elapsed < duration)
@@ -278,7 +269,8 @@ public class pinpointScript : MonoBehaviour {
         Square.transform.localPosition = new Vector3(goal.x, 0.02f, goal.z);
     }
 
-    private IEnumerator WaitASecThenContinue() {
+    private IEnumerator WaitASecThenContinue()
+    {
         yield return new WaitForSeconds(1f);
         StatusLight.transform.localPosition = SLDEFAULT;
         StatusLight.SetActive(false);
@@ -291,41 +283,31 @@ public class pinpointScript : MonoBehaviour {
     {
         HorizScissors.transform.localPosition = new Vector3(0f, 0f, Square.transform.localPosition.z * 16.667f);
         VertiScissors.transform.localPosition = new Vector3(Square.transform.localPosition.x * 16.667f, 0f, 0f);
-        HorizScissors.sprite = ScissorSprites[(int)Math.Round((Square.transform.localPosition.x + 0.055f) / 0.00305575f, 0)];
-        VertiScissors.sprite = ScissorSprites[(int)Math.Round((-Square.transform.localPosition.z + 0.055f) / 0.00305575f, 0)];
+        HorizScissors.sprite = ScissorSprites[(int) Math.Round((Square.transform.localPosition.x + 0.055f) / 0.00305575f, 0)];
+        VertiScissors.sprite = ScissorSprites[(int) Math.Round((-Square.transform.localPosition.z + 0.055f) / 0.00305575f, 0)];
     }
 
-    void UpdateDistanceArm() {
+    void UpdateDistanceArm()
+    {
         Arm.flipX = Square.transform.localPosition.x > 0f;
         Arm.flipY = Square.transform.localPosition.z < 0f;
         DistanceObj.transform.localPosition = new Vector3(Square.transform.localPosition.x > 0f ? -0.386f : 0.386f, 0.15f, Square.transform.localPosition.z < 0f ? 0.85f : -0.725f);
-        Distance.text = trunc(dists[shownPoint]);
+        Distance.text = Trunc(dists[shownPoint]);
     }
 
-    void swapTrick(int[] a, int p, int q) //this trick is so sick i love it
+    float Lerp(float a, float b, float t)
+    { //this assumes t is in the range 0-1
+        return a * (1f - t) + b * t;
+    }
+
+    string Trunc(float f)
     {
-        a[p] = a[p] ^ a[q];
-        a[q] = a[p] ^ a[q];
-        a[p] = a[p] ^ a[q];
+        return f.ToString("0.000");
     }
 
-    float lerp(float a, float b, float t) { //this assumes t is in the range 0-1
-        return a*(1f-t) + b*t;
-    }
-
-    string trunc(float f) {
-        string s = f.ToString();
-        if (s.IndexOf('.') == -1) {
-            return s + ".000";
-        } else {
-            string[] c = s.Split('.');
-            c[1] = c[1].PadRight(3, '0').Substring(0, 3);
-            return c[0] + "." + c[1];
-        }
-    }
-
-    string gridPos(int p) {
-        return "ABCDEFGHIJ"[p%10] + (p/10 + 1).ToString();
+    string GridPos(int p)
+    {
+        return "ABCDEFGHIJ"[p % 10] + (p / 10 + 1).ToString();
     }
 
 #pragma warning disable 0414
