@@ -62,11 +62,13 @@ public class pinpointScript : MonoBehaviour {
         scaleFactor = Rnd.Range(18, 7857) * 0.001f; //scale factors in this range ensure that 1) all the possible hypotenuses have distinct values when truncated to 3 decimals of precision and 2) the maximum a scaled hypotenuse is under 100
         do
         {
-            for (int p = 0; p < 4; p++) {
+            for (int p = 0; p < 4; p++)
+            {
                 points[p] = Rnd.Range(0, 100);
                 pointXs[p] = points[p] % 10;
                 pointYs[p] = points[p] / 10;
             }
+            if (!PointsMatch() && PointsColinear() ) { Debug.Log("COLINEAR: " + points[0] + ", " + points[1] + ", " + points[2]); }
         }
         while (PointsMatch() || PointsColinear()); //fortunately, even though points matching would break PointsColinear() via a division by 0, if PointsMatch() is true, C# will not evaulate PointsColinear()!
         for (int p = 0; p < 3; p++) {
@@ -94,20 +96,20 @@ public class pinpointScript : MonoBehaviour {
         //check which of the three points has to be in the middle; reading order will work fine here, swap to make the middle one points[1] if necessary
         if ((points[0] < points[1] && points[0] > points[2]) || (points[0] > points[1] && points[0] < points[2]))
         {
-            swapTrick(points[0], points[1]);
-            swapTrick(pointXs[0], pointXs[1]);
-            swapTrick(pointYs[0], pointYs[1]);
+            swapTrick(points, 0, 1);
+            swapTrick(pointXs, 0, 1);
+            swapTrick(pointYs, 0, 1);
         }
         else if ((points[2] < points[0] && points[2] > points[1]) || (points[2] > points[0] && points[2] < points[1]))
         {
-            swapTrick(points[1], points[2]);
-            swapTrick(pointXs[1], pointXs[2]);
-            swapTrick(pointYs[1], pointYs[2]);
+            swapTrick(points, 1, 2);
+            swapTrick(pointXs, 1, 2);
+            swapTrick(pointYs, 1, 2);
         }
 
-        //if the slopes ab and bc between points a, b, c - where b is the one in the middle - match, then the points are colinear
-        float abSlope = (pointXs[0] - pointXs[1]) / (pointYs[0] - pointYs[1]);
-        float bcSlope = (pointXs[1] - pointXs[2]) / (pointYs[1] - pointYs[2]);
+        //if the slopes ab and bc between points a, b, c - where b is the one in the middle - match, then the points are colinear, see OrthogonalCheck() as well
+        float abSlope = AlignmentCheck(0, 1) ?? (pointXs[0] - pointXs[1]) / (pointYs[0] - pointYs[1]);
+        float bcSlope = AlignmentCheck(1, 2) ?? (pointXs[1] - pointXs[2]) / (pointYs[1] - pointYs[2]);
         if (abSlope != bcSlope)
             return false;
 
@@ -118,6 +120,13 @@ public class pinpointScript : MonoBehaviour {
             return false;
 
         return true;
+    }
+
+    float? AlignmentCheck(int a, int b)
+    {
+        if (pointXs[a] == pointXs[b]) { return 0f; } //on the same x, the formula would be 0/n which is always 0 for non-zero n
+        if (pointYs[a] == pointYs[b]) { return Single.MaxValue; } // on the same y, the formula would be n/0 where i'll substitute for 'infinity'
+        return null;
     }
 
     private IEnumerator HueShift()
@@ -293,11 +302,11 @@ public class pinpointScript : MonoBehaviour {
         Distance.text = trunc(dists[shownPoint]);
     }
 
-    void swapTrick(int a, int b) //this trick is so sick i love it
+    void swapTrick(int[] a, int p, int q) //this trick is so sick i love it
     {
-        a = a ^ b;
-        b = a ^ b;
-        a = a ^ b;
+        a[p] = a[p] ^ a[q];
+        a[q] = a[p] ^ a[q];
+        a[p] = a[p] ^ a[q];
     }
 
     float lerp(float a, float b, float t) { //this assumes t is in the range 0-1
